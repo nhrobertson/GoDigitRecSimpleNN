@@ -243,13 +243,13 @@ Bug List:
 
 ~~Training_data and Test_data not working as intended~~
 
-~~ Shuffle not working ~~
+~~Shuffle not working~~
 
 ~~Z values to large for sigmoid creating 0 matrices~~
 
 ~~Adjusting input image setting to 0~~
 
-~~ Delta in backprop being changed when applying sigmoid to temp: https://stackoverflow.com/questions/76695248/go-matrix-application-problem-in-backpropagation-algorithm ~~
+~~Delta in backprop being changed when applying sigmoid to temp: https://stackoverflow.com/questions/76695248/go-matrix-application-problem-in-backpropagation-algorithm~~
 
 Adjusting of weights and biases causing de-learning instead of learning, Correct outputs going down for each epoch
 
