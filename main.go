@@ -7,7 +7,6 @@ import (
 	"log"
 	"math"
 	"math/rand"
-	"time"
 
 	"github.com/moverest/mnist"
 
@@ -70,6 +69,7 @@ func (nn *network) cost_derivative(output_a *mat.Dense, y mnist.Label) *mat.Dens
 	e := mat.NewDense(10, 1, nil)
 	e.Set(int(y), 0, 1.0)
 	output_a.Sub(output_a, e)
+
 	return output_a
 }
 
@@ -115,7 +115,7 @@ func ShuffleTrainingData(training_data *mnist.Set) {
 // Starts the process of learning usign stochasitc gradient descent. Intakes the size of a mini-batch of training data
 // the number of epochs of training, the learning rate eta, and then the training data and test data
 func (nn *network) StochasticGradientDescent(mini_batch_size int, epochs int, eta float64, training_data *mnist.Set, test_data *mnist.Set) {
-	//n_test := test_data.Count()
+	n_test := test_data.Count()
 	n := training_data.Count()
 	//Loop through the epochs
 	for i := 0; i < epochs; i++ {
@@ -139,7 +139,8 @@ func (nn *network) StochasticGradientDescent(mini_batch_size int, epochs int, et
 			nn.update_mini_batch(mini_batch, eta)
 		}
 		fmt.Printf("Epoch[%d]\n", i)
-
+		res := nn.evaluate(test_data)
+		fmt.Printf("Accuracy: %d / %d\n", res, n_test)
 	}
 }
 
@@ -165,16 +166,24 @@ func (nn *network) update_mini_batch(mini_batch *mnist.Set, eta float64) {
 			//Starts to update the weights and biases by adding the nablas with the delta nablas
 			nabla_b[j].Add(nabla_b[j], delta_nabla_b[j])
 			nabla_w[j].Add(nabla_w[j], delta_nabla_w[j])
+			// fmt.Println(mat.Formatted(nabla_b[j]))
+			// time.Sleep(10000000)
 		}
 	}
+	// fmt.Println("New batch")
+	// fmt.Println(eta / float64(mini_batch.Count()) * nabla_w[1].At(5, 2))
 	//Sets the weights and biases to the updated values
 	for i := 0; i < len(nn.weights); i++ {
 		for j := 0; j < nn.weights[i].RawMatrix().Rows; j++ {
 			for k := 0; k < nn.weights[i].RawMatrix().Cols; k++ {
 				val := nn.weights[i].At(j, k) - (eta/float64(mini_batch.Count()))*nabla_w[i].At(j, k)
 				nn.weights[i].Set(j, k, val)
+
 			}
 		}
+		// fmt.Println("Weights: ")
+		// fmt.Println(nn.weights[1].At(5, 2))
+		// time.Sleep(100000000)
 	}
 
 	for i := 0; i < len(nn.biases); i++ {
@@ -204,65 +213,56 @@ func (nn *network) backprop(x *mnist.Image, y mnist.Label) ([]*mat.Dense, []*mat
 	//Creates a usuable input matrix with each row being a pixel with a a value at column 0 pretaining to the color value from 0 - 255
 	a := mat.NewDense(len(x), 1, nil)
 	for i := 0; i < len(x); i++ {
-		a.Set(i, 0, float64(x[i]))
+		val := float64(x[i])
+		a.Set(i, 0, val/255)
 	}
 	zs := make([]*mat.Dense, nn.numLayers-1)
-	activations := make([]*mat.Dense, nn.numLayers-1)
+	activations := make([]*mat.Dense, nn.numLayers)
+	activations[0] = a
 	for i := 0; i < len(nn.weights); i++ {
 		var z mat.Dense
 		weights := nn.weights[i]
 		biases := nn.biases[i]
-		// fmt.Println(mat.Formatted(a))
-		// fmt.Println("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-		// fmt.Println(mat.Formatted(weights))
-		// fmt.Println("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW")
-		// fmt.Println(mat.Formatted(biases))
-		// fmt.Println("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")
 		z.Mul(weights, a)
 		z.Add(&z, biases)
 		zs[i] = &z
 		applySigmoid := func(_, _ int, v float64) float64 {
 			return sigmoid(v)
 		}
-		// fmt.Println(mat.Formatted(zs[i]))
-		// fmt.Println("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
 
 		z.Apply(applySigmoid, &z)
-		// fmt.Println(mat.Formatted(&z))
-		// fmt.Println("AAAAAAAAAAAAAAAAAAAAAAA")
 		a = &z
-		// fmt.Println(mat.Formatted(a))
-		// fmt.Printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA %d\n", i)
-		activations[i] = a
-		time.Sleep(10000000000)
+		activations[i+1] = a
 	}
 
 	delta := nn.cost_derivative(activations[len(activations)-1], y)
-	applySigmoidPrime := func(_, _ int, v float64) float64 {
-		return sigmoidPrime(v)
+
+	for i := 0; i < delta.RawMatrix().Rows; i++ {
+		for j := 0; j < delta.RawMatrix().Cols; j++ {
+			delta.Set(i, j, delta.At(i, j)*sigmoidPrime(zs[len(zs)-1].At(i, j)))
+		}
 	}
-	temp := zs[len(zs)-1]
-	temp.Apply(applySigmoidPrime, temp)
-	delta.MulElem(delta, temp)
 
 	nabla_b[len(nabla_b)-1] = delta
 	nabla_w[len(nabla_w)-1].Mul(delta, activations[len(activations)-1].T())
-	for l := 2; l < nn.numLayers-1; l++ {
+
+	for l := 2; l < nn.numLayers; l++ {
 		z := zs[len(zs)-l]
+		fmt.Println("__________________________")
+		fmt.Println(mat.Formatted(delta))
+		temp := z
 		applySigmoidPrime := func(_, _ int, v float64) float64 {
 			return sigmoidPrime(v)
 		}
-		temp = z
 		temp.Apply(applySigmoidPrime, z)
-		delta.Mul(nn.weights[len(nn.weights)-l+1], delta)
+		fmt.Println(mat.Formatted(delta))
+		delta.Mul(nn.weights[len(nn.weights)-l+1].T(), delta)
+		fmt.Println(mat.Formatted(delta))
 		delta.MulElem(delta, temp)
+		fmt.Println(mat.Formatted(delta))
 		nabla_b[len(nabla_b)-l] = delta
 		nabla_w[len(nabla_w)-l].Mul(delta, activations[len(activations)-l-1].T())
-
-		fmt.Println("")
-		fmt.Println(mat.Formatted(delta))
 	}
-
 	return nabla_b, nabla_w
 }
 
@@ -273,7 +273,8 @@ func (nn *network) evaluate(test_data *mnist.Set) int {
 		e.Set(int(*&test_data.Labels[i]), 0, 1.0)
 		a := mat.NewDense(784, 1, nil)
 		for j := 0; j < 784; j++ {
-			a.Set(j, 0, float64(test_data.Images[i][j]))
+			val := float64(test_data.Images[i][j])
+			a.Set(j, 0, val/255)
 		}
 		test_result := nn.feedforward(a)
 		maxVal := test_result.At(0, 0)
@@ -306,7 +307,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	fmt.Println("Starting")
 	nn.StochasticGradientDescent(30, 10, 3.0, training_data, test_data)
 
 }
