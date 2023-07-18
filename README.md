@@ -6,6 +6,18 @@ http://neuralnetworksanddeeplearning.com/index.html
 Compare to network.py in the updated code repository for the book:
 https://github.com/MichalDanielDobrzanski/DeepLearningPython/blob/master/network.py
 
+
+To use:
+
+Ensure that the go module is setup using the go.mod file
+
+In console:
+go run main.go
+
+This will compile any and all changes as well
+
+To update network change values in the main function
+
 Contains:
 
 ./data - Data directory containing the 4 MNIST data files 
