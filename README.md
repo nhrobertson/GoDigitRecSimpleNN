@@ -19,6 +19,7 @@ go.mod - Go module file - includes the required packages using by    the network
 go.sum - "Used to validate the checksum of each direct and indirect dependency to confirm none of them has been modified" (https://golangbyexample.com/go-mod-sum-module/)
 
 main.go - The main file containing the code for the neural network
+
     - network struct
         Structure containing:
         - numLayers - number of layers in the network
