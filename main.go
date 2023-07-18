@@ -1,8 +1,6 @@
 package main
 
 import (
-	//"encoding/csv"
-
 	"fmt"
 	"log"
 	"math"
@@ -173,8 +171,7 @@ func (nn *network) update_mini_batch(mini_batch *mnist.Set, eta float64) {
 			// time.Sleep(10000000)
 		}
 	}
-	// fmt.Println("New batch")
-	// fmt.Println(eta / float64(mini_batch.Count()) * nabla_w[1].At(5, 2))
+
 	//Sets the weights and biases to the updated values
 	for i := 0; i < len(nn.weights); i++ {
 		for j := 0; j < nn.weights[i].RawMatrix().Rows; j++ {
@@ -184,9 +181,6 @@ func (nn *network) update_mini_batch(mini_batch *mnist.Set, eta float64) {
 
 			}
 		}
-		// fmt.Println("Weights: ")
-		// fmt.Println(nn.weights[1].At(5, 2))
-		// time.Sleep(100000000)
 	}
 
 	for i := 0; i < len(nn.biases); i++ {
@@ -219,9 +213,12 @@ func (nn *network) backprop(x *mnist.Image, y mnist.Label) ([]*mat.Dense, []*mat
 		val := float64(x[i])
 		a.Set(i, 0, val/255)
 	}
+	//Creates lists of *mat.Denses for storing z matrices and activation matrices
 	zs := make([]*mat.Dense, nn.numLayers-1)
 	activations := make([]*mat.Dense, nn.numLayers)
+	//Stores input in activations at 0
 	activations[0] = a
+	//Feedforwards stroing zs and activations
 	for i := 0; i < len(nn.weights); i++ {
 		var z mat.Dense
 		weights := nn.weights[i]
@@ -237,49 +234,56 @@ func (nn *network) backprop(x *mnist.Image, y mnist.Label) ([]*mat.Dense, []*mat
 		a = &z
 		activations[i+1] = a
 	}
-
+	//Starts backpropagation by setting delta equal to the cost_derivative using the last layer of activations and label
 	delta := nn.cost_derivative(activations[len(activations)-1], y)
-
+	//Multiplies each value in the matrix by the corresponding sigmoidPrime value in the zs matrix at the last layer
 	for i := 0; i < delta.RawMatrix().Rows; i++ {
 		for j := 0; j < delta.RawMatrix().Cols; j++ {
 			delta.Set(i, j, delta.At(i, j)*sigmoidPrime(zs[len(zs)-1].At(i, j)))
 		}
 	}
-
+	//Sets the outputs last layers - bias to delta and weights to delta * last layer of activations transposed
 	nabla_b[len(nabla_b)-1] = delta
 	nabla_w[len(nabla_w)-1].Mul(delta, activations[len(activations)-1].T())
 
+	//For the number of layers back propagates
 	for l := 2; l < nn.numLayers; l++ {
 		z := zs[len(zs)-l]
-		// fmt.Println("__________________________")
-		// fmt.Println(mat.Formatted(delta))
 		temp := z
 		applySigmoidPrime := func(_, _ int, v float64) float64 {
 			return sigmoidPrime(v)
 		}
+		//Applies sigmoidPrime to the z matrix stored in temp
 		temp.Apply(applySigmoidPrime, z)
-		// fmt.Println(mat.Formatted(delta))
+		//Sets delta to weights transposed * delta
 		delta.Mul(nn.weights[len(nn.weights)-l+1].T(), delta)
-		// fmt.Println(mat.Formatted(delta))
+		//Multiples the elements by the sigmoidPrime elements of the z matrix
 		delta.MulElem(delta, temp)
-		// fmt.Println(mat.Formatted(delta))
+		//Sets the outputs similarly
 		nabla_b[len(nabla_b)-l] = delta
 		nabla_w[len(nabla_w)-l].Mul(delta, activations[len(activations)-l-1].T())
 	}
 	return nabla_b, nabla_w
 }
 
+// Function for evaluating the correct number of outputs using feedforward
 func (nn *network) evaluate(test_data *mnist.Set) int {
+	//Creates a test result list
 	test_results := make([]float64, test_data.Count())
 	for i := 0; i < test_data.Count(); i++ {
+		//Used for the labels
 		e := mat.NewDense(10, 1, nil)
 		e.Set(int(*&test_data.Labels[i]), 0, 1.0)
+		//Converts the image input into a usable matrix for feedforward
 		a := mat.NewDense(784, 1, nil)
 		for j := 0; j < 784; j++ {
 			val := float64(test_data.Images[i][j])
 			a.Set(j, 0, val/255)
 		}
+		//Sets test result to the output of the feedforward function
 		test_result := nn.feedforward(a)
+
+		//Used to get the actual output computed by the network and stores it in the results list
 		maxVal := test_result.At(0, 0)
 		num := 0.0
 		for i := 0; i < test_result.RawMatrix().Rows; i++ {
@@ -291,6 +295,7 @@ func (nn *network) evaluate(test_data *mnist.Set) int {
 		}
 		test_results[i] = num
 	}
+	//Calculated the sum of the number of correct outputs
 	sum := 0
 	for i := 0; i < len(test_results); i++ {
 		if test_results[i] == float64(test_data.Labels[i]) {
@@ -301,6 +306,7 @@ func (nn *network) evaluate(test_data *mnist.Set) int {
 	return sum
 }
 
+// Main function
 func main() {
 	fmt.Println()
 	sizes := []int{784, 10, 10}
@@ -316,5 +322,4 @@ func main() {
 }
 
 //TODO:
-//Change the input from the data set from 0 - 255 grayscale to 0.0 - 1.0 by dividing each pixels color value by 255
-//This will involve changing a couple of things
+//Fix learning
