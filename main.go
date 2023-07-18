@@ -66,8 +66,10 @@ func sigmoidPrime(z float64) float64 {
 
 // Cost function derivative
 func (nn *network) cost_derivative(output_a *mat.Dense, y mnist.Label) *mat.Dense {
+	//Converts y matrix into usable format
 	e := mat.NewDense(10, 1, nil)
 	e.Set(int(y), 0, 1.0)
+	//Subtracts the output from the actual label for training
 	output_a.Sub(output_a, e)
 
 	return output_a
@@ -81,14 +83,14 @@ func (nn *network) feedforward(a *mat.Dense) *mat.Dense {
 		var z mat.Dense
 		weights := nn.weights[i]
 		biases := nn.biases[i]
-		z.Mul(weights, a)
-		z.Add(&z, biases)
+		z.Mul(weights, a) //Multiplies the weights at i layer from the activations at i
+		z.Add(&z, biases) //Adds the biases
 		applySigmoid := func(_, _ int, v float64) float64 {
 			return sigmoid(v)
 		}
 
 		a = &z
-		a.Apply(applySigmoid, &z)
+		a.Apply(applySigmoid, &z) //Applies sigmoid
 
 	}
 	return a
@@ -115,6 +117,7 @@ func ShuffleTrainingData(training_data *mnist.Set) {
 // Starts the process of learning usign stochasitc gradient descent. Intakes the size of a mini-batch of training data
 // the number of epochs of training, the learning rate eta, and then the training data and test data
 func (nn *network) StochasticGradientDescent(mini_batch_size int, epochs int, eta float64, training_data *mnist.Set, test_data *mnist.Set) {
+	//Gets the sizes of the data
 	n_test := test_data.Count()
 	n := training_data.Count()
 	//Loop through the epochs
@@ -166,7 +169,7 @@ func (nn *network) update_mini_batch(mini_batch *mnist.Set, eta float64) {
 			//Starts to update the weights and biases by adding the nablas with the delta nablas
 			nabla_b[j].Add(nabla_b[j], delta_nabla_b[j])
 			nabla_w[j].Add(nabla_w[j], delta_nabla_w[j])
-			// fmt.Println(mat.Formatted(nabla_b[j]))
+			// fmt.Println(mat.Formatted(nabla_w[j]))
 			// time.Sleep(10000000)
 		}
 	}
@@ -248,18 +251,18 @@ func (nn *network) backprop(x *mnist.Image, y mnist.Label) ([]*mat.Dense, []*mat
 
 	for l := 2; l < nn.numLayers; l++ {
 		z := zs[len(zs)-l]
-		fmt.Println("__________________________")
-		fmt.Println(mat.Formatted(delta))
+		// fmt.Println("__________________________")
+		// fmt.Println(mat.Formatted(delta))
 		temp := z
 		applySigmoidPrime := func(_, _ int, v float64) float64 {
 			return sigmoidPrime(v)
 		}
 		temp.Apply(applySigmoidPrime, z)
-		fmt.Println(mat.Formatted(delta))
+		// fmt.Println(mat.Formatted(delta))
 		delta.Mul(nn.weights[len(nn.weights)-l+1].T(), delta)
-		fmt.Println(mat.Formatted(delta))
+		// fmt.Println(mat.Formatted(delta))
 		delta.MulElem(delta, temp)
-		fmt.Println(mat.Formatted(delta))
+		// fmt.Println(mat.Formatted(delta))
 		nabla_b[len(nabla_b)-l] = delta
 		nabla_w[len(nabla_w)-l].Mul(delta, activations[len(activations)-l-1].T())
 	}
@@ -308,7 +311,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("Starting")
-	nn.StochasticGradientDescent(30, 10, 3.0, training_data, test_data)
+	nn.StochasticGradientDescent(30, 30, 3.0, training_data, test_data)
 
 }
 
