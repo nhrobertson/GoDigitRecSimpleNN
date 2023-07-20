@@ -15,6 +15,7 @@ second layer which at first were rather large values then completely throw every
 Also changing the second layer from 10 will break the back propagation algorithm due to the weights list not multipling properly.
 
 Feel free to browse and try to desipher what seems to be the problem. I may come back and try to fix this eventually however I believe it to be more beneficial to me to try and not replicate and start from scratch.
+
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
