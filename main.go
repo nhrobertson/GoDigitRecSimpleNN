@@ -142,6 +142,7 @@ func (nn *network) StochasticGradientDescent(mini_batch_size int, epochs int, et
 		fmt.Printf("Epoch[%d]\n", i)
 		res := nn.evaluate(test_data)
 		fmt.Printf("Accuracy: %d / %d\n", res, n_test)
+
 	}
 }
 
@@ -220,18 +221,19 @@ func (nn *network) backprop(x *mnist.Image, y mnist.Label) ([]*mat.Dense, []*mat
 	activations[0] = a
 	//Feedforwards stroing zs and activations
 	for i := 0; i < len(nn.weights); i++ {
-		var z mat.Dense
 		weights := nn.weights[i]
 		biases := nn.biases[i]
+		z := mat.NewDense(weights.RawMatrix().Rows, a.RawMatrix().Cols, nil)
+
 		z.Mul(weights, a)
-		z.Add(&z, biases)
-		zs[i] = &z
+		z.Add(z, biases)
+
+		zs[i] = z
 		applySigmoid := func(_, _ int, v float64) float64 {
 			return sigmoid(v)
 		}
-
-		z.Apply(applySigmoid, &z)
-		a = &z
+		z.Apply(applySigmoid, z)
+		a = z
 		activations[i+1] = a
 	}
 	//Starts backpropagation by setting delta equal to the cost_derivative using the last layer of activations and label
@@ -260,6 +262,7 @@ func (nn *network) backprop(x *mnist.Image, y mnist.Label) ([]*mat.Dense, []*mat
 		//Multiples the elements by the sigmoidPrime elements of the z matrix
 		delta.MulElem(delta, temp)
 		//Sets the outputs similarly
+
 		nabla_b[len(nabla_b)-l] = delta
 		nabla_w[len(nabla_w)-l].Mul(delta, activations[len(activations)-l-1].T())
 	}
@@ -273,7 +276,7 @@ func (nn *network) evaluate(test_data *mnist.Set) int {
 	for i := 0; i < test_data.Count(); i++ {
 		//Used for the labels
 		e := mat.NewDense(10, 1, nil)
-		e.Set(int(*&test_data.Labels[i]), 0, 1.0)
+		e.Set(int(test_data.Labels[i]), 0, 1.0)
 		//Converts the image input into a usable matrix for feedforward
 		a := mat.NewDense(784, 1, nil)
 		for j := 0; j < 784; j++ {
@@ -317,7 +320,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("Starting")
-	nn.StochasticGradientDescent(30, 30, 3.0, training_data, test_data)
+	nn.StochasticGradientDescent(50, 50, 0.5, training_data, test_data)
 
 }
 

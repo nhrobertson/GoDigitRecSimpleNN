@@ -1,4 +1,4 @@
-A simple neural network for recognizing digits using the MNIST digit data set.
+#A simple neural network for recognizing digits using the MNIST digit data set.
 
 Directly inspired/converted from Michael Nielsen's neural network and deep learning book: 
 http://neuralnetworksanddeeplearning.com/index.html
@@ -6,8 +6,19 @@ http://neuralnetworksanddeeplearning.com/index.html
 Compare to network.py in the updated code repository for the book:
 https://github.com/MichalDanielDobrzanski/DeepLearningPython/blob/master/network.py
 
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+**DISCLAIMER:**
+This neural network does not function as intended. It can only get up to about an 80% accuracy rating when the target was 91-95%.
+Due to the conversion from python to Go, many of the functions were attempted to be 1-1 representations of the python network.py,
+however in back propagation, some methods used by Gonum are not correctly correlating to the NumPy results (specifically activations at the
+second layer which at first were rather large values then completely throw everything off (you would have to run about 100000 epochs to get good results))
+Also changing the second layer from 10 will break the back propagation algorithm due to the weights list not multipling properly.
 
-To use:
+Feel free to browse and try to desipher what seems to be the problem. I may come back and try to fix this eventually however I believe it to be more beneficial to me to try and not replicate and start from scratch.
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+**To use:**
 
 Ensure that the go module is setup using the go.mod file
 
@@ -18,19 +29,19 @@ This will compile any and all changes as well
 
 To update network change values in the main function
 
-Contains:
+**Contains:**
 
-./data - Data directory containing the 4 MNIST data files 
+*./data* - Data directory containing the 4 MNIST data files 
     - test images and labels
     - training images and labels
 
-go.mod - Go module file - includes the required packages using by    the network
+*go.mod* - Go module file - includes the required packages using by    the network
     - Gonum - library for linear algebra - gonum.org/v1/gonum
     - MNIST - ease of access to the MNIST data - github.com/moverest/mnist
 
-go.sum - "Used to validate the checksum of each direct and indirect dependency to confirm none of them has been modified" (https://golangbyexample.com/go-mod-sum-module/)
+*go.sum* - "Used to validate the checksum of each direct and indirect dependency to confirm none of them has been modified" (https://golangbyexample.com/go-mod-sum-module/)
 
-main.go - The main file containing the code for the neural network
+*main.go* - The main file containing the code for the neural network:
 
     - network struct
         Structure containing:
@@ -252,7 +263,7 @@ main.go - The main file containing the code for the neural network
         Starts StochasticGradientDescent for that network
         -------------------------------------------------------------
 
-Bug List:
+**Bug List:**
 
 ~~Training_data and Test_data not working as intended~~
 
